@@ -1,0 +1,293 @@
+\documentclass[a4paper, 14pt]{extarticle}
+
+% Поля
+%--------------------------------------
+\usepackage{geometry}
+\geometry{a4paper,tmargin=2cm,bmargin=2cm,lmargin=3cm,rmargin=1cm}
+%--------------------------------------
+
+
+%Russian-specific packages
+%--------------------------------------
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc} 
+\usepackage[english, main=russian]{babel}
+%--------------------------------------
+
+\usepackage{textcomp}
+
+% Красная строка
+%--------------------------------------
+\usepackage{indentfirst}               
+%--------------------------------------             
+
+
+%Graphics
+%--------------------------------------
+\usepackage{graphicx}
+\graphicspath{ {./images/} }
+\usepackage{wrapfig}
+%--------------------------------------
+
+% Полуторный интервал
+%--------------------------------------
+\linespread{1.3}                    
+%--------------------------------------
+
+%Выравнивание и переносы
+%--------------------------------------
+% Избавляемся от переполнений
+\sloppy
+% Запрещаем разрыв страницы после первой строки абзаца
+\clubpenalty=10000
+% Запрещаем разрыв страницы после последней строки абзаца
+\widowpenalty=10000
+%--------------------------------------
+
+%Списки
+\usepackage{enumitem}
+
+%Подписи
+\usepackage{caption} 
+
+%Гиперссылки
+\usepackage{hyperref}
+
+\hypersetup {
+	unicode=true
+}
+
+%Рисунки
+%--------------------------------------
+\DeclareCaptionLabelSeparator*{emdash}{~--- }
+\captionsetup[figure]{labelsep=emdash,font=onehalfspacing,position=bottom}
+%--------------------------------------
+
+\usepackage{tempora}
+\usepackage{amsmath}
+\usepackage{color}
+\usepackage{listings}
+\lstset{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=L,
+  xleftmargin=\parindent,
+  language=Python,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\bfseries\color{blue},
+  commentstyle=\itshape\color{purple},
+  identifierstyle=\color{black},
+  stringstyle=\color{red},
+}
+
+%--------------------------------------
+%			НАЧАЛО ДОКУМЕНТА
+%--------------------------------------
+
+\begin{document}
+
+%--------------------------------------
+%			ТИТУЛЬНЫЙ ЛИСТ
+%--------------------------------------
+\begin{titlepage}
+\thispagestyle{empty}
+\newpage
+
+
+%Шапка титульного листа
+%--------------------------------------
+\vspace*{-60pt}
+\hspace{-65pt}
+\begin{minipage}{0.3\textwidth}
+\hspace*{-20pt}\centering
+\includegraphics[width=\textwidth]{emblem}
+\end{minipage}
+\begin{minipage}{0.67\textwidth}\small \textbf{
+\vspace*{-0.7ex}
+\hspace*{-6pt}\centerline{Министерство науки и высшего образования Российской Федерации}
+\vspace*{-0.7ex}
+\centerline{Федеральное государственное бюджетное образовательное учреждение }
+\vspace*{-0.7ex}
+\centerline{высшего образования}
+\vspace*{-0.7ex}
+\centerline{<<Московский государственный технический университет}
+\vspace*{-0.7ex}
+\centerline{имени Н.Э. Баумана}
+\vspace*{-0.7ex}
+\centerline{(национальный исследовательский университет)>>}
+\vspace*{-0.7ex}
+\centerline{(МГТУ им. Н.Э. Баумана)}}
+\end{minipage}
+%--------------------------------------
+
+%Полосы
+%--------------------------------------
+\vspace{-25pt}
+\hspace{-35pt}\rule{\textwidth}{2.3pt}
+
+\vspace*{-20.3pt}
+\hspace{-35pt}\rule{\textwidth}{0.4pt}
+%--------------------------------------
+
+\vspace{1.5ex}
+\hspace{-35pt} \noindent \small ФАКУЛЬТЕТ\hspace{80pt} <<Информатика и системы управления>>
+
+\vspace*{-16pt}
+\hspace{47pt}\rule{0.83\textwidth}{0.4pt}
+
+\vspace{0.5ex}
+\hspace{-35pt} \noindent \small КАФЕДРА\hspace{50pt} <<Теоретическая информатика и компьютерные технологии>>
+
+\vspace*{-16pt}
+\hspace{30pt}\rule{0.866\textwidth}{0.4pt}
+  
+\vspace{11em}
+
+\begin{center}
+\Large {\bf Лабораторная работа № 3} \\ 
+\large {\bf по курсу <<Методы оптимизации>>} \\ 
+\large <<Поиск минимума функции методом перебора и дихотомии>>
+\end{center}\normalsize
+
+\vspace{8em}
+
+
+\begin{flushright}
+  {Студент группы ИУ9-82Б Гимазов А. Р.\hspace*{15pt} \\
+  \vspace{2ex}
+  Преподаватель Посевин Д. П.\hspace*{15pt}}
+\end{flushright}
+
+\bigskip
+
+\vfill
+ 
+
+\begin{center}
+\textsl{Москва 2022}
+\end{center}
+\end{titlepage}
+%--------------------------------------
+%		КОНЕЦ ТИТУЛЬНОГО ЛИСТА
+%--------------------------------------
+
+\renewcommand{\ttdefault}{pcr}
+
+\setlength{\tabcolsep}{3pt}
+\newpage
+\setcounter{page}{2}
+
+\section{Цель}\label{Sect::task}
+\par
+Определить интервал, на котором функция является унимодальной, алгоритм определения унимодальности должен принимать на вход левую и правую точку отрезка и возвращать false — если функция на этом отрезке не унимодальная, в противном случае true.
+\par
+Реализовать поиск минимума унимодальной функции на полученном интервале методом прямого перебора и дихотомии с заданной точностью по вариантам. Результат должен быть представлен на графике, точки минимизирующей последовательности должны быть выделены красным цветом, интервалы деления синим.
+\par
+Точность вычисления точки минимума должна варьироваться.
+\section{Персональный вариант}
+\begin{center}
+$f(x) = x^4 + 8x^3 - 6x^2 - 72x$
+\end{center}
+\pagebreak
+\section{Практическая реализация}
+Код представлен в Листинге 1.
+\begin{lstlisting}
+using PyPlot
+
+n = 100
+
+function f(x)
+    return x^4 + 8 * x^3 - 6 * x^2 - 72 * x
+end    
+
+function makePlot(a, b)
+    x = range(a; stop = b, length = n)
+    y = [f(x[i]) for i=1:n]
+    plot(x, y)
+end
+
+function checkUniModal(a, b)
+    x = range(a; stop = b, length = n)
+    y = [f(x[i]) for i=1:n]
+    flag = false
+    for i=2:n
+        if y[i-1] < y[i]
+            flag = true
+        else
+            if flag
+                return false
+            end
+        end
+    end
+    return true
+end
+
+function findMinIter(a, b)
+    x = range(a; stop = b, length = n)
+    y = [f(x[i]) for i=1:n]
+    minX = x[1]
+    minY = y[1]
+    for i=2:n
+        if y[i] < minY
+            minX = x[i]
+            minY = y[i]
+        end
+    end
+    return minX, minY
+end
+
+function findMinDi(a, b, eps)
+    delta = eps / 2
+    xs = []
+    ys = []
+    append!(xs, a)
+    append!(ys, f(a))
+    append!(xs, b)
+    append!(ys, f(b))    
+    while abs(b-a) > eps
+        x1 = (a + b - delta) / 2
+        x2 = (a + b + delta) / 2
+        fx1 = f(x1)
+        fx2 = f(x2)
+        if fx1 > fx2
+            a = x1
+            append!(xs, a)
+            append!(ys, f(a))
+        else
+            b = x2
+            append!(xs, b)
+            append!(ys, f(b))
+        end
+    end
+    scatter(xs, ys, color="red")    
+    x = (a + b) / 2
+    y = f(x)
+    return x, y
+end
+    
+println(checkUniModal(-8, -4))        
+println(checkUniModal(-8, 4))
+    
+a = -8
+b = -4
+eps = 0.000000000001
+            
+makePlot(a, b)
+            
+println(findMinIter(a, b))                
+println(findMinDi(a, b, eps))
+\end{lstlisting}
+
+\section{Результаты}
+В результате работы программы получилcя следующий график:
+\begin{center}
+\includegraphics[scale=1.1]{g1}\\
+$true$\\
+$false$\\
+$(-5.97979797979798, -215.9731957246002)$\\
+$(-6.002994686365355, -215.9994076725469)$\\
+\end{center}
+\section{Выводы}
+В данной лабораторной работе был реализован поиск минимума унимодальной функции на полученном интервале методом прямого перебора и дихотомии с заданной точностью по вариантам.
+\end{document}
