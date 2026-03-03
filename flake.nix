@@ -48,11 +48,12 @@
             typst compile let03/let03.typ let03.pdf
             typst compile lab01/lab01.typ lab01.pdf
             typst compile lab02/lab02.typ lab02.pdf
+            typst compile lab03/lab03.typ lab03.pdf
           '';
 
           installPhase = ''
             mkdir -p $out
-            mv let01.pdf let03.pdf lab01.pdf lab02.pdf $out/
+            mv let01.pdf let03.pdf lab01.pdf lab02.pdf lab03.pdf $out/
           '';
         };
 
