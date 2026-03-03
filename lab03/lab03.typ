@@ -175,116 +175,116 @@
 - Метод `toString()` для строкового представления.
 
 #terminal(title: "BoolMatrix.java (конструкторы)")[
-```java
-public class BoolMatrix implements Comparable<BoolMatrix> {
-  private boolean[][] matrix;
-  private int m, n;
+  ```java
+  public class BoolMatrix implements Comparable<BoolMatrix> {
+    private boolean[][] matrix;
+    private int m, n;
 
-  public BoolMatrix(int[][] matrix) {
-    m = matrix.length;
-    if (m > 0) {
-      n = matrix[0].length;
-    } else {
-      n = 0;
-    }
+    public BoolMatrix(int[][] matrix) {
+      m = matrix.length;
+      if (m > 0) {
+        n = matrix[0].length;
+      } else {
+        n = 0;
+      }
 
-    this.matrix = new boolean[m][n];
+      this.matrix = new boolean[m][n];
 
-    for (int i = 0; i < m; i++) {
-      for (int j = 0; j < n; j++) {
-        this.matrix[i][j] = matrix[i][j] == 1;
+      for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+          this.matrix[i][j] = matrix[i][j] == 1;
+        }
       }
     }
-  }
 
-  public BoolMatrix(String data, int rows, int cols) {
-    this.m = rows;
-    this.n = cols;
-    this.matrix = new boolean[m][n];
-    for (int i = 0; i < m; i++) {
-      for (int j = 0; j < n; j++) {
-        int idx = i * n + j;
-        this.matrix[i][j] = data.charAt(idx) == '1';
+    public BoolMatrix(String data, int rows, int cols) {
+      this.m = rows;
+      this.n = cols;
+      this.matrix = new boolean[m][n];
+      for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+          int idx = i * n + j;
+          this.matrix[i][j] = data.charAt(idx) == '1';
+        }
       }
     }
-  }
-```
+  ```
 ]
 
 #terminal(title: "BoolMatrix.java (метод getOrd)")[
-```java
-  public int getOrd() {
-    int total_good_rows_and_cols = 0;
+  ```java
+    public int getOrd() {
+      int total_good_rows_and_cols = 0;
 
-    for (int i = 0; i < m; i++) {
-      boolean is_good = true;
-      for (int j = 1; j < n; j++) {
-        if (matrix[i][j] != matrix[i][0]) {
-          is_good = false;
-          break;
+      for (int i = 0; i < m; i++) {
+        boolean is_good = true;
+        for (int j = 1; j < n; j++) {
+          if (matrix[i][j] != matrix[i][0]) {
+            is_good = false;
+            break;
+          }
+        }
+
+        if (is_good) {
+          total_good_rows_and_cols++;
         }
       }
 
-      if (is_good) {
-        total_good_rows_and_cols++;
-      }
-    }
+      for (int j = 0; j < n; j++) {
+        boolean is_good = true;
+        for (int i = 1; i < m; i++) {
+          if (matrix[i][j] != matrix[0][j]) {
+            is_good = false;
+            break;
+          }
+        }
 
-    for (int j = 0; j < n; j++) {
-      boolean is_good = true;
-      for (int i = 1; i < m; i++) {
-        if (matrix[i][j] != matrix[0][j]) {
-          is_good = false;
-          break;
+        if (is_good) {
+          total_good_rows_and_cols++;
         }
       }
 
-      if (is_good) {
-        total_good_rows_and_cols++;
-      }
+      return total_good_rows_and_cols;
     }
-
-    return total_good_rows_and_cols;
-  }
-```
+  ```
 ]
 
 #terminal(title: "BoolMatrix.java (методы compareTo и toString)")[
-```java
-  public int compareTo(BoolMatrix other) {
-    int ord = getOrd();
-    int other_ord = other.getOrd();
+  ```java
+    public int compareTo(BoolMatrix other) {
+      int ord = getOrd();
+      int other_ord = other.getOrd();
 
-    if (ord > other_ord) {
-      return 1;
-    } else if (ord < other_ord) {
-      return -1;
+      if (ord > other_ord) {
+        return 1;
+      } else if (ord < other_ord) {
+        return -1;
+      }
+      return 0;
     }
-    return 0;
-  }
 
-  public String toString() {
-    String result = "";
+    public String toString() {
+      String result = "";
 
-    for (int i = 0; i < m; i++) {
-      for (int j = 0; j < n; j++) {
-        if (matrix[i][j]) {
-          result += "1";
-        } else {
-          result += "0";
+      for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+          if (matrix[i][j]) {
+            result += "1";
+          } else {
+            result += "0";
+          }
+          if (j != n - 1) {
+            result += " ";
+          }
         }
-        if (j != n - 1) {
-          result += " ";
+        if (i != m - 1) {
+          result += "\n";
         }
       }
-      if (i != m - 1) {
-        result += "\n";
-      }
+      return result;
     }
-    return result;
   }
-}
-```
+  ```
 ]
 
 == HTTP-сервер
@@ -295,12 +295,6 @@ public class BoolMatrix implements Comparable<BoolMatrix> {
 - Принимает параметры двух матриц (`mat1`, `mat2`) с их размерами;
 - Возвращает JSON-ответ с представлением матриц и их порядком.
 
-Для фронтенда используется server-side rendering с библиотекой Pico.css для стилизации.
-
-#figure(
-  image("interface.png", width: 80%),
-  caption: [Интерфейс веб-сервера лабораторной работы],
-)
 
 = Протокол тестирования
 
@@ -318,43 +312,23 @@ public class BoolMatrix implements Comparable<BoolMatrix> {
 
 #terminal(title: "arseny@local-pc")[
   ```bash
-  $ java Test.java
+    $ java Test.java
   1 0 0 1
   0 1 1 0
   1 1 0 0
   This matrix has 0 equal rows & cols
-  ```
-]
 
-Порядок матрицы равен 0: ни одна строка и ни один столбец не содержат одинаковых элементов.
-
-== Тест 2: Матрица с тремя равными строками/столбцами
-
-#terminal(title: "arseny@local-pc")[
-  ```bash
-  $ java Test.java
   1 0 0 1
   1 1 1 1
   1 1 0 1
   1 1 0 1
   This matrix has 3 equal rows & cols
-  ```
-]
 
-Порядок матрицы равен 3: вторая строка (1111), первый столбец (1111) и третий столбец (0011).
-
-== Тест 3: Матрица с четырьмя равными строками/столбцами
-
-#terminal(title: "arseny@local-pc")[
-  ```bash
-  $ java Test.java
   1 1
   1 1
   This matrix has 4 equal rows & cols
   ```
 ]
-
-Порядок матрицы равен 4: обе строки и оба столбца состоят из одинаковых элементов.
 
 == Тест через веб-сервер
 
@@ -368,11 +342,8 @@ public class BoolMatrix implements Comparable<BoolMatrix> {
   ```
 ]
 
-Первая матрица (0101) имеет порядок 2: первый столбец (00) и второй столбец (11) равны.
-Вторая матрица (1111) имеет порядок 4: все строки и столбцы равны.
-
 = Вывод
 
 В ходе лабораторной работы был реализован класс `BoolMatrix`, представляющий булевские матрицы размера $m times n$. Класс реализует интерфейс `Comparable<BoolMatrix>`, позволяющий сравнивать матрицы по порядку — суммарному количеству строк и столбцов, все элементы которых равны между собой.
 
-Созданный HTTP-сервер успешно обрабатывает GET-запросы, парсит параметры матриц и возвращает результаты в формате JSON. Фронтенд реализован с использованием server-side rendering и библиотеки Pico.css для стилизации. Тестирование подтвердило корректность работы алгоритма вычисления порядка для различных матриц.
+Созданный HTTP-сервер успешно обрабатывает GET-запросы, парсит параметры матриц и возвращает результаты в формате JSON. Тестирование подтвердило корректность работы алгоритма вычисления порядка для различных матриц.
