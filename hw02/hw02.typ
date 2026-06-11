@@ -60,7 +60,7 @@
   v(6cm)
 
   align(center)[
-    #text(size: 18pt, weight: "bold")[Лабораторная работа № #lab_number] \
+    #text(size: 18pt, weight: "bold")[Домашняя работа № #lab_number] \
     #v(0.5em)
     #text(size: 14pt, weight: "bold")[по курсу «#course»] \
     #v(0.5em)
@@ -141,7 +141,7 @@
   student: "Булдаков А. С.",
   group: "ИУ9-22Б",
   teacher: "Посевин Д. П.",
-  lab_number: "17",
+  lab_number: "2",
   course: "Языки и методы программирования",
   theme: "MQTT. Publisher и Subscriber. Java Swing",
   year: "2026",

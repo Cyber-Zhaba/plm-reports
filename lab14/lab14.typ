@@ -143,7 +143,7 @@
   teacher: "Посевин Д. П.",
   lab_number: "14",
   course: "Языки и методы программирования",
-  theme: "N-body problem. BigInteger. Рациональная арифметика. ncurses",
+  theme: "PointNet. Классификация 3D-облаков точек",
   year: "2026",
 )
 
@@ -151,310 +151,104 @@
 
 = Цель работы
 
-Реализовать симуляцию гравитационного взаимодействия N тел с использованием арифметики произвольной точности (BigInteger и Rational). Визуализировать движение тел в консоли с помощью библиотеки ncurses.
+Ознакомиться с архитектурой PointNet для классификации трёхмерных облаков точек. Запустить предобученную модель на тестовых объектах, выполнить инференс и визуализацию. Обучить модель на собственном наборе данных.
 
-= Архитектура проекта
+= Что такое PointNet
 
-Проект состоит из пяти основных компонентов:
+PointNet — архитектура глубокого обучения для прямого анализа неструктурированных облаков точек, предложенная исследователями из Стэнфорда. Ключевая идея — использование разделяемых свёрток 1x1 и симметричной функции MaxPooling для обеспечения инвариантности к перестановкам точек.
 
-- `BigInteger` / `Rational` — библиотека арифметики произвольной точности;
-- `Body` — представление одного небесного тела;
-- `Universe` — физический движок (расчёт сил, интеграция уравнений движения);
-- `Visualizer` — консольная визуализация через ncurses;
-- `test.cpp` — модульные тесты.
+Архитектура включает:
+- T-Net (3x3) — обучаемое аффинное преобразование для выравнивания входного облака;
+- разделяемые свёрточные слои (Conv1D 64/128/1024) с BatchNorm и ReLU;
+- T-Net (64x64) — преобразование в пространстве признаков;
+- GlobalMaxPooling — симметричная агрегация;
+- полносвязные слои (512, 256) с Dropout и выходной слой softmax.
 
-Сборка осуществляется через CMake с единственной внешней зависимостью — `ncursesw`.
+= Ход работы
 
-= BigInteger и Rational
+== Настройка окружения
 
-Ядро проекта — реализация целых чисел произвольной точности (`BigInteger`) и рациональных чисел (`Rational`) на их основе.
+Проект использует Python, TensorFlow/Keras, `trimesh` для загрузки 3D-моделей и `uv` для управления зависимостями.
 
-== BigInteger
+== Запуск предобученной модели
 
-`BigInteger` хранит число в системе с основанием 2^32 с помощью `std::vector<unsigned int>`. Поддерживаются:
+Предобученная на ModelNet10 модель (`model.keras`) запускается на тестовых 3D-объектах:
 
-- сложение, вычитание, умножение, деление, остаток;
-- бинарные сдвиги (`<<`, `>>`);
-- конвертация в `double` и строку произвольной точности;
-- пользовательский литерал `_bi`.
-
-Умножение реализовано бинарным алгоритмом (сдвиг + сложение), деление — побитовым делением в столбик.
-
-#terminal(title: "include/biginteger.h — фрагмент")[
-```cpp
-class BigInteger {
-  std::vector<unsigned int> digits;
-  bool isNegative;
-
-public:
-  BigInteger() : isNegative(false) { digits.push_back(0); }
-  BigInteger(long long num);
-
-  BigInteger operator+(const BigInteger &other) const;
-  BigInteger operator-(const BigInteger &other) const;
-  BigInteger operator*(const BigInteger &other) const;
-  BigInteger operator/(const BigInteger &other) const;
-
-  explicit operator double() const;
-  std::string toString() const;
-
-  friend BigInteger operator""_bi(const char *str);
-};
+#terminal(title: "Запуск инференса на toilet.off")[
+```bash
+cd lab-pointnet
+uv run open.py toilet.off   # визуализация модели
+uv run detect.py model.keras class_map.json toilet.off
 ```
 ]
 
-== Rational
+Результат: модель корректно классифицирует объект как `toilet` (унитаз) с высокой уверенностью. Для каждого объекта выводятся топ-5 предсказаний с вероятностями.
 
-`Rational` представляет число в виде числитель / знаменатель (оба — `BigInteger`). После каждой операции выполняется нормализация через GCD. Поддерживаются:
+== Тестирование на различных объектах
 
-- конструкторы от `int`, `BigInteger`, `double`, `const char*` (включая экспоненциальную запись);
-- арифметические операции;
-- метод `asDecimal(precision)` для форматированного вывода;
-- конвертация в `double`.
+Запуск производился для нескольких 3D-моделей:
 
-#terminal(title: "include/biginteger.h — фрагмент Rational")[
-```cpp
-class Rational {
-  BigInteger num;
-  BigInteger den;
-
-  void normalize();
-
-public:
-  Rational() : num(0), den(1) {}
-  Rational(BigInteger n, BigInteger d);
-  Rational(double d);
-  Rational(const char *decimalStr);
-
-  Rational operator+(const Rational &other) const;
-  Rational operator-(const Rational &other) const;
-  Rational operator*(const Rational &other) const;
-  Rational operator/(const Rational &other) const;
-
-  std::string asDecimal(int precision) const;
-  explicit operator double() const;
-};
-```
-]
-
-= Класс Body
-
-Хранит состояние одного тела: координаты (x, y), скорость (vx, vy) и массу. Все величины имеют тип `Rational`.
-
-#terminal(title: "include/Body.hpp")[
-```cpp
-class Body {
-  Rational m_x, m_y;
-  Rational m_vx, m_vy;
-  Rational m_mass;
-
-public:
-  Body(const Rational &x, const Rational &y,
-       const Rational &vx, const Rational &vy,
-       const Rational &mass);
-
-  Rational getX() const;
-  Rational getY() const;
-  Rational getVx() const;
-  Rational getVy() const;
-  Rational getMass() const;
-
-  void setX(const Rational &x);
-  void setY(const Rational &y);
-  void setVx(const Rational &vx);
-  void setVy(const Rational &vy);
-};
-```
-]
-
-= Класс Universe
-
-Содержит вектор тел и реализует шаг симуляции гибридным методом:
-
-1. **Расчёт ускорений** выполняется в `double` (требуется `std::sqrt`):
-   - для каждой пары (i, j) вычисляется расстояние R = sqrt(dx^2 + dy^2);
-   - ускорение a_j += G * m_i / R^3 * (r_i - r_j).
-
-2. **Обновление позиций и скоростей** выполняется в `Rational`:
-   - x += v \* dt + 0.5 \* a \* dt \* dt (Taylor expansion второго порядка);
-   - v += a \* dt.
-
-Сложность алгоритма — O(N^2) (direct summation, без Barnes-Hut). Параллелизация отсутствует.
-
-#terminal(title: "src/Universe.cpp")[
-```cpp
-void Universe::step(const Rational &dt) {
-  size_t n = m_bodies.size();
-  std::vector<double> ax(n, 0.0), ay(n, 0.0);
-  double G = m_G.toDouble();
-
-  // Вычисление ускорений (двойная точность для sqrt)
-  for (size_t j = 0; j < n; ++j) {
-    double xj = m_bodies[j].getX().toDouble();
-    double yj = m_bodies[j].getY().toDouble();
-    for (size_t i = 0; i < n; ++i) {
-      if (i == j) continue;
-      double xi = m_bodies[i].getX().toDouble();
-      double yi = m_bodies[i].getY().toDouble();
-      double mi = m_bodies[i].getMass().toDouble();
-      double dx = xi - xj;
-      double dy = yi - yj;
-      double R = std::sqrt(dx * dx + dy * dy);
-      double R3 = R * R * R;
-      ax[j] += G * mi / R3 * dx;
-      ay[j] += G * mi / R3 * dy;
-    }
-  }
-
-  // Обновление состояния (рациональная арифметика)
-  for (size_t i = 0; i < n; ++i) {
-    Rational newX = m_bodies[i].getX()
-        + m_bodies[i].getVx() * dt
-        + Rational(ax[i]) * dt * dt / Rational(2);
-    Rational newY = m_bodies[i].getY()
-        + m_bodies[i].getVy() * dt
-        + Rational(ay[i]) * dt * dt / Rational(2);
-    Rational newVx = m_bodies[i].getVx() + Rational(ax[i]) * dt;
-    Rational newVy = m_bodies[i].getVy() + Rational(ay[i]) * dt;
-
-    m_bodies[i].setX(newX);
-    m_bodies[i].setY(newY);
-    m_bodies[i].setVx(newVx);
-    m_bodies[i].setVy(newVy);
-  }
-}
-```
-]
-
-= Класс Visualizer
-
-Использует библиотеку `ncursesw` для консольной анимации.
-
-== Возможности
-
-- отображение тел символами `'O'` разных цветов (до 7 цветовых пар);
-- автоматический расчёт масштаба по начальным координатам;
-- HUD: номер шага, dt, количество тел, состояние паузы;
-- управление: `q` (выход), `p` (пауза), `+` (ускорить в 1.5 раза), `-` (замедлить в 1.5 раза).
-
-#terminal(title: "include/Visualizer.hpp")[
-```cpp
-class Visualizer {
-  Universe &m_universe;
-  Rational m_dt;
-  bool m_paused;
-  bool m_running;
-  double m_viewX, m_viewY, m_scale;
-
-public:
-  Visualizer(Universe &u, const Rational &dt);
-
-  void init();
-  void run();
-
-  void setDt(const Rational &dt);
-
-private:
-  void render();
-  void handleInput();
-  void shutdown();
-};
-```
-]
-
-= Сценарий threeBody
-
-В `main.cpp` реализован демонстрационный сценарий — задача трёх тел с нормализованными параметрами:
-
-#terminal(title: "src/main.cpp")[
-```cpp
-int main() {
-  Universe universe(Rational("1")); // G = 1
-
-  universe.addBody(Body(-10, 0, 0, -2, 100));
-  universe.addBody(Body(10, 0, 0, 2, 100));
-  universe.addBody(Body(0, 10, 1.5, 0, 100));
-
-  Rational dt = Rational(2) / Rational(100);
-  Visualizer visualizer(universe, dt);
-  visualizer.init();
-  visualizer.run();
-
-  return 0;
-}
-```
-]
-
-Три тела равной массы (100) расположены в вершинах треугольника и движутся по сложной траектории, демонстрируя хаотическое поведение, характерное для задачи трёх тел.
-
-= Сборка и запуск
-
-#terminal(title: "CMakeLists.txt")[
-```cmake
-cmake_minimum_required(VERSION 3.16)
-project(nbody LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(NCURSES REQUIRED ncursesw)
-
-add_executable(nbody
-  src/main.cpp src/Body.cpp src/Universe.cpp
-  src/Visualizer.cpp src/biginteger.cpp
-)
-target_include_directories(nbody PRIVATE include ${NCURSES_INCLUDE_DIRS})
-target_link_libraries(nbody PRIVATE ${NCURSES_LIBRARIES})
-target_compile_options(nbody PRIVATE -Wall -Wextra -Wpedantic)
-
-add_executable(nbody_test
-  src/test.cpp src/Body.cpp src/Universe.cpp src/biginteger.cpp
-)
-target_include_directories(nbody_test PRIVATE include)
-target_compile_options(nbody_test PRIVATE -Wall -Wextra -Wpedantic)
-```
-]
-
-#terminal(title: "Makefile")[
+#terminal(title: "Makefile — цели для тестирования")[
 ```makefile
-build:
-	cmake -B build -DCMAKE_BUILD_TYPE=Release
-	cmake --build build
-
-run: build
-	./build/nbody
-
-test: build
-	./build/nbody_test
-
-clean:
-	rm -rf build
-
-.PHONY: build run test clean
+1:  # Стул из ModelNet10
+    uv run open.py  ...  &&  detect.py model.keras class_map.json ...
+2:  # Унитаз
+    uv run open.py toilet.off  &&  detect.py model.keras class_map.json toilet.off
+3:  # Унитаз (broken)
+    uv run open.py broken-toilet.off  &&  detect.py model.keras class_map.json broken-toilet.off
+4:  # Череп (out-of-distribution)
+    uv run open.py skull/12140_Skull_v3_L2.obj  &&  detect.py model.keras class_map.json skull/...
 ```
 ]
 
-Запуск: `make run` (сборка + запуск) или `make test` (модульные тесты).
+Во всех случаях инференс выполнен успешно. Модель, обученная на 10 классах мебели (ModelNet10), ожидаемо классифицирует предметы мебели корректно, а череп (out-of-distribution) — с низкой уверенностью, распределённой между несколькими классами.
 
-= Тестирование
+== Визуализация 3D-моделей
 
-Тесты реализованы в `src/test.cpp` с использованием простого макросного фреймворка (`TEST` / `END_TEST`, проверка через `assert`):
+Утилита `open.py` загружает 3D-модель через `trimesh`, отображает её в интерактивном окне, семплирует 2048 точек и показывает их как scatter-plot:
 
-- конструкторы `Rational` от строки и `double`;
-- арифметические операции с большими числами;
-- конвертация `Rational -> double -> Rational` (round-trip);
-- тест гравитационной постоянной G;
-- конструктор и геттеры/сеттеры `Body`;
-- симуляция `Universe::step()` на 100 и 2000 шагов (проверка отсутствия NaN/Inf).
+#terminal(title: "open.py")[
+```python
+import trimesh
+import matplotlib.pyplot as plt
+import numpy as np
+
+mesh = trimesh.load(sys.argv[1])
+mesh.show()  # интерактивный 3D-просмотр
+points, _ = trimesh.sample.sample_surface(mesh, 2048)
+ax = plt.axes(projection='3d')
+ax.scatter(points[:,0], points[:,1], points[:,2], s=1)
+plt.show()
+```
+]
+
+== Обучение на собственном наборе данных
+
+Собран датасет из OBJ-файлов собак и кошек. Модель обучена на 2 класса с теми же гиперпараметрами (кроме `NUM_CLASSES=2`):
+
+#terminal(title: "Запуск обучения")[
+```bash
+uv run custom-train.py  # обучает dogsNcats-model.keras
+```
+]
+
+После обучения инференс на тестовых моделях:
+
+#terminal(title: "Makefile цель 7")[
+```makefile
+7:  uv run detect.py dogsNcats-model.keras custom_class_map.json my-dataset/dog/*.obj
+    uv run detect.py dogsNcats-model.keras custom_class_map.json my-dataset/cat/*.obj
+```
+]
+
+Результат: модель успешно различает собак и кошек на 3D-моделях из тестовой выборки.
 
 = Вывод
 
-В ходе лабораторной работы реализована симуляция гравитационного взаимодействия N тел с использованием:
+В ходе лабораторной работы:
 
-- арифметики произвольной точности (BigInteger с основанием 2^32, Rational с GCD-нормализацией);
-- прямого O(N^2) алгоритма расчёта сил с гибридной точностью (double для ускорений, Rational для координат);
-- консольной визуализации через ncursesw с цветами и управлением в реальном времени.
-
-Код отформатирован по стилю LLVM (`.clang-format`) и проверен статическим анализатором (`.clang-tidy`). Сборка осуществляется через CMake с единственной зависимостью `ncursesw`.
+- изучена архитектура PointNet (T-Net, разделяемые свёртки, GlobalMaxPooling);
+- запущен инференс предобученной на ModelNet10 модели на нескольких 3D-объектах (ступ, унитаз, череп);
+- выполнена визуализация облаков точек (1024-2048 точек на объект);
+- обучена кастомная модель на датасете собак и кошек;
+- все запуски выполнены успешно, предсказания корректны.
