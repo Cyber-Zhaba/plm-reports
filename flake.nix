@@ -68,11 +68,14 @@
             typst compile lab13/lab13.typ lab13.pdf
             typst compile kontrollarbeit/kontrollarbeit.typ kontrollarbeit.pdf
             typst compile lab14/lab14.typ lab14.pdf
+            typst compile lab15/lab15.typ lab15.pdf
+            typst compile lab16/lab16.typ lab16.pdf
+            typst compile lab17/lab17.typ lab17.pdf
           '';
 
           installPhase = ''
             mkdir -p $out
-            mv let01.pdf let03.pdf let04.pdf let05.pdf let06.pdf let07.pdf let08.pdf let09.pdf let10.pdf lab01.pdf lab02.pdf lab03.pdf lab04.pdf lab05.pdf lab06.pdf lab07.pdf lab08.pdf lab09.pdf lab10.pdf lab11.pdf lab12.pdf lab13.pdf lab14.pdf kontrollarbeit.pdf $out/
+            mv let01.pdf let03.pdf let04.pdf let05.pdf let06.pdf let07.pdf let08.pdf let09.pdf let10.pdf lab01.pdf lab02.pdf lab03.pdf lab04.pdf lab05.pdf lab06.pdf lab07.pdf lab08.pdf lab09.pdf lab10.pdf lab11.pdf lab12.pdf lab13.pdf lab14.pdf lab15.pdf lab16.pdf lab17.pdf kontrollarbeit.pdf $out/
           '';
         };
 
